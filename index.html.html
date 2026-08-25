@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treino Técnico — Usinagem</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#e5e7eb}
+.container{max-width:1050px;margin:auto;padding:24px}
+header{background:linear-gradient(135deg,#1e293b,#111827);padding:24px;border-radius:18px;margin-bottom:18px}
+h1{margin:0 0 8px;font-size:30px} p{color:#cbd5e1}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:16px}
+button{border:0;border-radius:10px;padding:12px 16px;background:#2563eb;color:white;font-weight:bold;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button.secondary{background:#475569}
+button.correct{background:#15803d}
+button.wrong{background:#b91c1c}
+select{background:#0f172a;color:white;border:1px solid #475569;border-radius:10px;padding:10px;width:100%}
+.hidden{display:none}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}
+.stat{background:#0f172a;border-radius:10px;padding:10px 14px}
+.question{font-size:21px;line-height:1.5;margin:20px 0}
+.options{display:grid;gap:10px}
+.options button{text-align:left;background:#334155}
+.feedback{margin-top:15px;padding:14px;border-radius:10px;background:#0f172a}
+.progress{height:9px;background:#334155;border-radius:10px;overflow:hidden;margin:15px 0}
+.bar{height:100%;background:#3b82f6;width:0%}
+.badge{display:inline-block;padding:6px 10px;border-radius:20px;background:#0f172a;color:#93c5fd}
+.big{font-size:42px;font-weight:bold}
+.small{font-size:13px;color:#94a3b8}
+footer{text-align:center;color:#64748b;padding:25px}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="badge">Treino técnico</div>
+  <h1>📚 Prática de Usinagem e Metrologia</h1>
+  <p>Questões com correção automática, pontuação e níveis de dificuldade.</p>
+</header>
+
+<section id="home" class="card">
+  <h2>Escolha o treino</h2>
+  <div class="grid">
+    <div>
+      <label>Categoria</label>
+      <select id="category">
+        <option value="Todas">Todas</option>
+        <option>Metrologia e tolerâncias</option>
+        <option>Sistema sexagesimal</option>
+        <option>Materiais</option>
+        <option>Segurança e usinagem</option>
+        <option>Furação</option>
+        <option>Porcentagem, retrabalho e sucata</option>
+        <option>Trigonometria</option>
+        <option>Ferramentaria e matrizes</option>
+        <option>Conversão mm/polegada</option>
+      </select>
+    </div>
+    <div>
+      <label>Nível</label>
+      <select id="difficulty">
+        <option value="Todos">Todos</option>
+        <option>Fácil</option>
+        <option>Médio</option>
+        <option>Difícil</option>
+      </select>
+    </div>
+  </div>
+  <br>
+  <button onclick="startQuiz()">▶ Começar</button>
+</section>
+
+<section id="quiz" class="card hidden">
+  <div class="stats">
+    <div class="stat">Questão <b id="qnum">1</b>/<span id="total">10</span></div>
+    <div class="stat">Acertos: <b id="score">0</b></div>
+    <div class="stat">Erros: <b id="errors">0</b></div>
+    <div class="stat">⏱️ <b id="timer">00:00</b></div>
+  </div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="small" id="meta"></div>
+  <div class="question" id="question"></div>
+  <div class="options" id="options"></div>
+  <div id="feedback" class="feedback hidden"></div>
+  <br>
+  <button id="next" class="hidden" onclick="nextQuestion()">Próxima questão →</button>
+</section>
+
+<section id="result" class="card hidden">
+  <h2>🏆 Resultado</h2>
+  <div class="big" id="finalScore"></div>
+  <p id="finalText"></p>
+  <button onclick="startQuiz()">🔄 Fazer novamente</button>
+  <button class="secondary" onclick="goHome()">← Voltar</button>
+</section>
+
+<footer>Treino técnico — arquivo HTML independente</footer>
+</div>
+
+<script>
+const questions = [
+{c:"Metrologia e tolerâncias",d:"Fácil",q:"Uma peça mede 30,00 ± 0,05 mm. Qual é a faixa aceitável?",o:["29,50 a 30,50 mm","29,95 a 30,05 mm","30,00 a 30,05 mm","29,05 a 30,05 mm"],a:1,e:"30,00 − 0,05 = 29,95 mm e 30,00 + 0,05 = 30,05 mm."},
+{c:"Metrologia e tolerâncias",d:"Médio",q:"Uma medida de 25,04 mm está dentro de 25,00 ± 0,03 mm?",o:["Sim","Não","Somente se for retrabalho","Não é possível saber"],a:1,e:"Os limites são 24,97 e 25,03 mm. 25,04 mm está acima do máximo."},
+{c:"Metrologia e tolerâncias",d:"Difícil",q:"Uma peça tem 50,00 ± 0,02 mm. Quais medidas estão dentro da tolerância?",o:["49,98 e 50,01 mm","50,03 e 49,97 mm","49,97 e 50,03 mm","Somente 50,00 mm"],a:0,e:"Os limites são 49,98 e 50,02 mm."},
+
+{c:"Sistema sexagesimal",d:"Fácil",q:"25,5° correspondem a:",o:["25° 05′","25° 30′","25° 50′","26° 30′"],a:1,e:"0,5 × 60 = 30′."},
+{c:"Sistema sexagesimal",d:"Médio",q:"42° 30′ em graus decimais é:",o:["42,03°","42,05°","42,50°","43,30°"],a:2,e:"30 ÷ 60 = 0,5. Portanto 42,50°."},
+{c:"Sistema sexagesimal",d:"Difícil",q:"30° 24′ 36″ em graus decimais é:",o:["30,24°","30,40°","30,41°","30,46°"],a:2,e:"30 + 24/60 + 36/3600 = 30,41°."},
+
+{c:"Materiais",d:"Fácil",q:"Qual é um material não ferroso?",o:["Aço","Ferro fundido","Alumínio","Aço carbono"],a:2,e:"Alumínio é não ferroso."},
+{c:"Materiais",d:"Médio",q:"Qual material é ferroso?",o:["Cobre","Bronze","Aço","Alumínio"],a:2,e:"O aço tem ferro como principal componente."},
+{c:"Materiais",d:"Difícil",q:"Latão é uma liga principalmente de:",o:["Ferro e carbono","Cobre e zinco","Cobre e estanho","Alumínio e ferro"],a:1,e:"Latão = cobre + zinco."},
+
+{c:"Segurança e usinagem",d:"Fácil",q:"Como remover cavacos com segurança?",o:["Com a mão","Com pano durante o giro","Com ferramenta apropriada, como escova ou gancho","Soprando com a boca"],a:2,e:"Nunca retire cavacos com as mãos."},
+{c:"Segurança e usinagem",d:"Médio",q:"Pode medir uma peça enquanto a máquina está funcionando?",o:["Sim","Sim, se for rápido","Não; aguarde a parada completa","Somente com paquímetro"],a:2,e:"A máquina deve estar parada para medir com segurança."},
+{c:"Segurança e usinagem",d:"Difícil",q:"Qual é uma sequência segura antes de iniciar a usinagem?",o:["Ligar, prender peça, colocar ferramenta","Interpretar desenho, preparar material, fixar peça, fixar ferramenta, ajustar parâmetros e ligar","Ligar e depois verificar proteções","Retirar proteções e iniciar"],a:1,e:"A preparação e a fixação devem ocorrer antes de ligar."},
+
+{c:"Furação",d:"Fácil",q:"Qual é a função da broca?",o:["Medir o furo","Produzir o furo removendo material","Prender a peça","Resfriar a máquina"],a:1,e:"A broca remove material para formar o furo."},
+{c:"Furação",d:"Médio",q:"Qual é a função do mandril?",o:["Fixar a broca","Medir o diâmetro","Apoiar a peça","Resfriar a broca"],a:0,e:"O mandril prende a broca."},
+{c:"Furação",d:"Difícil",q:"Antes de ligar uma furadeira de bancada, deve-se:",o:["Deixar a chave no mandril","Segurar a peça com a mão","Retirar a chave do mandril e verificar fixação","Tocar na broca"],a:2,e:"A chave do mandril deve ser retirada antes de ligar."},
+
+{c:"Porcentagem, retrabalho e sucata",d:"Fácil",q:"Em 500 peças, 25 são sucata. Qual o percentual?",o:["2%","5%","10%","25%"],a:1,e:"25 ÷ 500 × 100 = 5%."},
+{c:"Porcentagem, retrabalho e sucata",d:"Médio",q:"Em 800 peças, 40 são retrabalho e 40 são sucata. Qual o percentual que não ficou bom de primeira?",o:["5%","8%","10%","20%"],a:2,e:"(40 + 40) ÷ 800 × 100 = 10%."},
+{c:"Porcentagem, retrabalho e sucata",d:"Difícil",q:"De 2.000 peças, 100 são sucata e 60 são retrabalho. Qual o percentual total de perdas?",o:["5%","6%","8%","10%"],a:2,e:"(100 + 60) ÷ 2000 × 100 = 8%."},
+
+{c:"Trigonometria",d:"Fácil",q:"Em um triângulo 3-4-5, qual é o seno do ângulo cujo oposto mede 3?",o:["0,4","0,6","0,75","0,8"],a:1,e:"sen = oposto/hipotenusa = 3/5 = 0,6."},
+{c:"Trigonometria",d:"Médio",q:"Em um triângulo com adjacente 4 e hipotenusa 5, qual é o cosseno?",o:["0,4","0,6","0,8","1,25"],a:2,e:"cos = 4/5 = 0,8."},
+{c:"Trigonometria",d:"Difícil",q:"Um triângulo tem oposto 6 e adjacente 8. Qual é a tangente?",o:["0,60","0,75","0,80","1,33"],a:1,e:"tg = 6/8 = 0,75."},
+
+{c:"Ferramentaria e matrizes",d:"Fácil",q:"Qual é a função principal do punção?",o:["Medir a peça","Aplicar força sobre o material","Resfriar a matriz","Medir temperatura"],a:1,e:"O punção aplica força no material."},
+{c:"Ferramentaria e matrizes",d:"Médio",q:"O repuxo é usado para:",o:["Furar apenas","Dar profundidade à chapa","Medir espessura","Soldar"],a:1,e:"Repuxo conforma uma chapa plana, dando profundidade."},
+{c:"Ferramentaria e matrizes",d:"Difícil",q:"Em estampagem, punção + matriz podem realizar:",o:["Somente medição","Corte e conformação","Somente resfriamento","Somente pintura"],a:1,e:"O conjunto pode realizar corte, dobra e outras conformações."},
+
+{c:"Conversão mm/polegada",d:"Fácil",q:"12,7 mm equivalem a:",o:["0,25\"","0,50\"","0,75\"","1,00\""],a:1,e:"12,7 ÷ 25,4 = 0,50\"."},
+{c:"Conversão mm/polegada",d:"Médio",q:"0,625\" equivalem a:",o:["12,7 mm","15,875 mm","19,05 mm","25,4 mm"],a:1,e:"0,625 × 25,4 = 15,875 mm."},
+{c:"Conversão mm/polegada",d:"Difícil",q:"38,10 mm correspondem a quantos milésimos de polegada?",o:["1.250","1.400","1.500","1.625"],a:2,e:"38,10 ÷ 25,4 = 1,500\" = 1500 milésimos."},
+{c:"Conversão mm/polegada",d:"Médio",q:"0,875\" correspondem a:",o:["19,05 mm","22,225 mm","25,4 mm","28,575 mm"],a:1,e:"0,875 × 25,4 = 22,225 mm."}
+];
+
+let pool=[], current=0, score=0, errors=0, answered=false, seconds=0, interval;
+
+function startQuiz(){
+  const cat=document.getElementById("category").value, dif=document.getElementById("difficulty").value;
+  pool=questions.filter(x=>(cat==="Todas"||x.c===cat)&&(dif==="Todos"||x.d===dif));
+  pool=pool.sort(()=>Math.random()-0.5).slice(0,10);
+  current=0;score=0;errors=0;seconds=0;
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  clearInterval(interval); interval=setInterval(()=>{seconds++;document.getElementById("timer").textContent=formatTime(seconds)},1000);
+  document.getElementById("total").textContent=pool.length;
+  render();
+}
+function formatTime(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+function render(){
+  answered=false;
+  const x=pool[current];
+  document.getElementById("qnum").textContent=current+1;
+  document.getElementById("score").textContent=score;
+  document.getElementById("errors").textContent=errors;
+  document.getElementById("bar").style.width=(current/pool.length*100)+"%";
+  document.getElementById("meta").textContent=x.c+" • "+x.d;
+  document.getElementById("question").textContent=x.q;
+  const op=document.getElementById("options"); op.innerHTML="";
+  x.o.forEach((t,i)=>{
+    const b=document.createElement("button"); b.textContent=String.fromCharCode(65+i)+") "+t;
+    b.onclick=()=>answer(i,b); op.appendChild(b);
+  });
+  document.getElementById("feedback").classList.add("hidden");
+  document.getElementById("next").classList.add("hidden");
+}
+function answer(i,btn){
+  if(answered)return; answered=true;
+  const x=pool[current], buttons=[...document.querySelectorAll("#options button")];
+  buttons.forEach(b=>b.disabled=true);
+  if(i===x.a){score++;btn.classList.add("correct");}
+  else{errors++;btn.classList.add("wrong");buttons[x.a].classList.add("correct");}
+  const f=document.getElementById("feedback");
+  f.innerHTML=(i===x.a?"✅ <b>Correto!</b> ":"❌ <b>Incorreto.</b> ")+"<br>"+x.e;
+  f.classList.remove("hidden");
+  document.getElementById("score").textContent=score;
+  document.getElementById("errors").textContent=errors;
+  document.getElementById("next").classList.remove("hidden");
+}
+function nextQuestion(){
+  current++;
+  if(current>=pool.length){finish();return}
+  render();
+}
+function finish(){
+  clearInterval(interval);
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+  const pct=Math.round(score/pool.length*100);
+  document.getElementById("finalScore").textContent=score+"/"+pool.length+" — "+pct+"%";
+  document.getElementById("finalText").textContent=pct>=90?"Excelente! Você está muito bem preparado. 🔥":pct>=70?"Muito bom! Continue praticando os pontos em que errou. 💪":"Continue treinando. A prática vai melhorar seu resultado! 📚";
+}
+function goHome(){
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("home").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
