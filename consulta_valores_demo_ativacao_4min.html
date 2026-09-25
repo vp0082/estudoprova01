@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Valores — Demonstração</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#050711;--panel:rgba(13,18,35,.72);--line:rgba(92,220,255,.22);
+  --cyan:#4de8ff;--purple:#9b6cff;--text:#eef7ff;--muted:#8ea2bb;
+}
+body{
+  margin:0;min-height:100vh;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);
+  background:
+    radial-gradient(circle at 15% 10%,rgba(70,95,255,.18),transparent 30%),
+    radial-gradient(circle at 85% 85%,rgba(0,238,255,.13),transparent 30%),var(--bg);
+  overflow-x:hidden;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:42px 42px;
+}
+.container{width:min(940px,92%);margin:auto;padding:42px 0}
+.badge{display:inline-flex;gap:8px;align-items:center;border:1px solid rgba(77,232,255,.3);
+  background:rgba(77,232,255,.06);padding:8px 13px;border-radius:999px;color:var(--cyan);
+  font-size:12px;font-weight:800;letter-spacing:1.5px}
+.badge span{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 15px var(--cyan)}
+h1{font-size:clamp(34px,6vw,62px);line-height:1;margin:18px 0 12px;letter-spacing:-2px}
+.gradient{background:linear-gradient(90deg,#fff,var(--cyan),#a978ff);-webkit-background-clip:text;color:transparent}
+.subtitle{color:var(--muted);max-width:650px;font-size:16px;line-height:1.7}
+.panel{margin-top:30px;padding:28px;border:1px solid var(--line);background:var(--panel);
+  backdrop-filter:blur(20px);border-radius:24px;box-shadow:0 20px 70px rgba(0,0,0,.35)}
+label.title{display:block;font-size:13px;color:#c5d4e5;font-weight:700;margin-bottom:10px}
+input[type=text],.other{
+  width:100%;padding:16px 17px;border-radius:14px;border:1px solid rgba(255,255,255,.11);
+  background:rgba(255,255,255,.045);color:white;outline:none;font-size:16px;transition:.25s
+}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(77,232,255,.08)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:20px}
+.check{position:relative}
+.check input{position:absolute;opacity:0}
+.check label{display:flex;align-items:center;gap:12px;padding:15px;border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;background:rgba(255,255,255,.035);cursor:pointer;transition:.2s;font-weight:600}
+.box{width:20px;height:20px;border-radius:6px;border:1px solid #557087;display:grid;place-items:center}
+.check input:checked+label{border-color:rgba(77,232,255,.55);background:rgba(77,232,255,.08);box-shadow:0 0 22px rgba(77,232,255,.08)}
+.check input:checked+label .box{background:var(--cyan);border-color:var(--cyan)}
+.check input:checked+label .box:after{content:"✓";color:#00131a;font-weight:900}
+.other-wrap{display:none;margin-top:14px}
+.actions{margin-top:25px}
+button{border:0;cursor:pointer;font-weight:900;letter-spacing:.5px}
+.primary{width:100%;padding:17px;border-radius:15px;color:#00131a;background:linear-gradient(90deg,var(--cyan),#9af6ff);
+  box-shadow:0 0 30px rgba(77,232,255,.22);font-size:15px;transition:.2s}
+.primary:hover{transform:translateY(-2px);box-shadow:0 0 42px rgba(77,232,255,.35)}
+.note{font-size:11px;color:#70849b;text-align:center;margin-top:13px;line-height:1.6}
+.hidden{display:none!important}
+.screen{position:fixed;inset:0;z-index:20;background:rgba(2,4,12,.96);display:grid;place-items:center;padding:20px}
+.loader-card{width:min(580px,94%);text-align:center;padding:38px;border:1px solid var(--line);border-radius:28px;background:rgba(10,15,30,.9);box-shadow:0 0 100px rgba(77,232,255,.08)}
+.ring{width:110px;height:110px;border-radius:50%;margin:0 auto 25px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--cyan);
+  border-right-color:var(--purple);animation:spin 1s linear infinite;position:relative}
+.ring:after{content:"";position:absolute;inset:12px;border-radius:50%;border:1px solid rgba(77,232,255,.35);animation:spin 2s linear reverse infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{height:9px;border-radius:99px;background:#172235;overflow:hidden;margin:22px 0 12px}
+.bar{height:100%;width:0;background:linear-gradient(90deg,var(--purple),var(--cyan));box-shadow:0 0 20px var(--cyan);transition:width .2s}
+.percent{font-size:12px;color:var(--cyan);font-weight:800}
+.status{margin-top:16px;color:#b5c6d8;font-size:14px;min-height:22px}
+.result{width:min(650px,94%);text-align:center;padding:35px;border:1px solid rgba(77,232,255,.3);border-radius:28px;background:rgba(10,15,30,.94);box-shadow:0 0 100px rgba(77,232,255,.09)}
+.ok{color:var(--cyan);font-size:12px;font-weight:900;letter-spacing:2px}
+.amount{margin:18px 0;padding:28px;border-radius:22px;background:linear-gradient(135deg,rgba(77,232,255,.1),rgba(155,108,255,.1));border:1px solid rgba(77,232,255,.18)}
+.amount small{display:block;color:#8da4ba;font-size:11px;letter-spacing:2px;font-weight:800}
+.amount strong{display:block;font-size:clamp(40px,9vw,68px);margin-top:8px;background:linear-gradient(90deg,#fff,var(--cyan));-webkit-background-clip:text;color:transparent}
+.selected{font-size:13px;color:#9db0c4;line-height:1.8}
+.warning{margin:22px 0;padding:13px;border-radius:12px;background:rgba(255,184,77,.06);border:1px solid rgba(255,184,77,.2);color:#d6c19d;font-size:11px;line-height:1.6}
+.secondary{padding:13px 18px;border-radius:12px;background:transparent;color:var(--cyan);border:1px solid rgba(77,232,255,.3)}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.container{padding:28px 0}.panel{padding:20px}}
+</style>
+</head>
+<body>
+<main class="container">
+  <div class="badge"><span></span> SISTEMA DEMONSTRATIVO</div>
+  <h1><span class="gradient">Consulta de Valores</span></h1>
+  <p class="subtitle">Interface futurista para simulação de consulta por CPF e seleção de plataformas.</p>
+
+  <section class="panel">
+    <label class="title" for="cpf">CPF</label>
+    <input id="cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+
+    <label class="title" style="margin-top:24px">Selecione as plataformas</label>
+    <div class="grid">
+      <div class="check"><input id="betano" type="checkbox" value="Betano"><label for="betano"><span class="box"></span>Betano</label></div>
+      <div class="check"><input id="bet365" type="checkbox" value="bet365"><label for="bet365"><span class="box"></span>bet365</label></div>
+      <div class="check"><input id="superbet" type="checkbox" value="Superbet"><label for="superbet"><span class="box"></span>Superbet</label></div>
+      <div class="check"><input id="betnacional" type="checkbox" value="Betnacional"><label for="betnacional"><span class="box"></span>Betnacional</label></div>
+      <div class="check"><input id="esportes" type="checkbox" value="Esportes da Sorte"><label for="esportes"><span class="box"></span>Esportes da Sorte</label></div>
+      <div class="check"><input id="betesporte" type="checkbox" value="Betesporte"><label for="betesporte"><span class="box"></span>Betesporte</label></div>
+      <div class="check"><input id="outros" type="checkbox" value="Outros"><label for="outros"><span class="box"></span>Outros</label></div>
+    </div>
+
+    <div class="other-wrap" id="otherWrap">
+      <input class="other" id="otherName" type="text" placeholder="Digite o nome da plataforma">
+    </div>
+
+    <div class="actions"><button class="primary" id="consult">CONSULTAR</button></div>
+    <div class="note">Demonstração local • nenhum CPF é enviado ou consultado em serviços externos.</div>
+  </section>
+</main>
+
+<div class="screen hidden" id="loading">
+  <div class="loader-card">
+    <div class="ring"></div>
+    <div class="ok">PROCESSAMENTO DEMONSTRATIVO</div>
+    <h2 id="loadingTitle">Processando consulta...</h2>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="percent" id="percent">0%</div>
+    <div class="status" id="status">Inicializando...</div>
+  </div>
+</div>
+
+<div class="screen hidden" id="result">
+  <div class="result">
+    <div class="ok">✓ SIMULAÇÃO CONCLUÍDA</div>
+    <h2>Resultado da demonstração</h2>
+    <div class="amount"><small>VALOR SIMULADO</small><strong>R$ 1.400,00</strong></div>
+    <div class="selected" id="selected"></div>
+    <div class="warning">
+      Este valor é fictício e serve somente para demonstrar a interface.
+      Esta página não consulta contas, saldos, CPF, bancos ou sistemas das plataformas.
+    </div>
+    <button class="primary" id="redeem">RESGATAR SALDO</button><button class="secondary" id="back" style="margin-top:10px">← NOVA CONSULTA</button>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+const cpf = document.getElementById('cpf');
+cpf.addEventListener('input', e=>{
+  let v=e.target.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>9) v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  else if(v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  else if(v.length>3) v=v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+  e.target.value=v;
+});
+const outros=document.getElementById('outros');
+outros.addEventListener('change',()=>document.getElementById('otherWrap').style.display=outros.checked?'block':'none');
+
+function selectedPlatforms(){
+  const arr=[...document.querySelectorAll('.check input:checked')].map(x=>x.value);
+  if(outros.checked && document.getElementById('otherName').value.trim())
+    arr[arr.indexOf('Outros')]='Outros: '+document.getElementById('otherName').value.trim();
+  return arr;
+}
+document.getElementById('consult').onclick=()=>{
+  const raw=cpf.value.replace(/\D/g,'');
+  if(raw.length!==11){alert('Digite um CPF com 11 dígitos.');return}
+  const platforms=selectedPlatforms();
+  if(!platforms.length){alert('Selecione pelo menos uma plataforma.');return}
+
+  document.getElementById('loading').classList.remove('hidden');
+  const bar=document.getElementById('bar'), pct=document.getElementById('percent'), status=document.getElementById('status');
+  const messages=[
+    [0,'Iniciando simulação...'],[20,'Validando informações...'],[42,'Processando consulta demonstrativa...'],
+    [65,'Verificando plataformas selecionadas...'],[84,'Finalizando simulação...'],[100,'Consulta demonstrativa concluída.']
+  ];
+  const start=Date.now(), duration=20000;
+  const timer=setInterval(()=>{
+    const p=Math.min(100,Math.floor((Date.now()-start)/duration*100));
+    bar.style.width=p+'%';pct.textContent=p+'%';
+    let msg=messages[0][1];
+    for(const m of messages) if(p>=m[0]) msg=m[1];
+    status.textContent=msg;
+    if(p>=100){
+      clearInterval(timer);
+      setTimeout(()=>{
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('result').classList.remove('hidden');
+        document.getElementById('selected').innerHTML='<b>Plataformas selecionadas:</b><br>'+platforms.join(' • ');
+      },500);
+    }
+  },100);
+};
+function resetDemo(){document.getElementById('result').classList.add('hidden');document.getElementById('pix').classList.add('hidden');document.getElementById('success').classList.add('hidden');cpf.value='';document.querySelectorAll('.check input').forEach(x=>x.checked=false);document.getElementById('otherWrap').style.display='none';document.getElementById('otherName').value='';document.getElementById('pixKey').value='';}
+document.getElementById('redeem').onclick=()=>{
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('pix').classList.remove('hidden');
+};
+
+document.getElementById('cancelPix').onclick=()=>{
+  document.getElementById('pix').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+};
+
+document.getElementById('withdraw').onclick=()=>{
+  const key=document.getElementById('pixKey').value.trim();
+  if(!key){alert('Digite uma chave Pix fictícia para continuar a demonstração.');return}
+
+  document.getElementById('pix').classList.add('hidden');
+
+  const saque=document.getElementById('saqueProcessando');
+  const erro=document.getElementById('erroCpf');
+  const saqueBar=document.getElementById('saqueBar');
+  const saquePct=document.getElementById('saquePct');
+  const saqueStatus=document.getElementById('saqueStatus');
+
+  saque.classList.remove('hidden');
+  saqueBar.style.width='0%';
+  saquePct.textContent='0%';
+  saqueStatus.textContent='Iniciando processamento do saque...';
+
+  const inicio=Date.now(), duracao=6500;
+  const timer=setInterval(()=>{
+    const p=Math.min(100, Math.floor((Date.now()-inicio)/duracao*100));
+    saqueBar.style.width=p+'%';
+    saquePct.textContent=p+'%';
+
+    if(p<30) saqueStatus.textContent='Validando solicitação de saque...';
+    else if(p<60) saqueStatus.textContent='Verificando dados informados...';
+    else if(p<85) saqueStatus.textContent='Processando solicitação...';
+    else saqueStatus.textContent='Finalizando verificação...';
+
+    if(p>=100){
+      clearInterval(timer);
+      setTimeout(()=>{
+        saque.classList.add('hidden');
+        erro.classList.remove('hidden');
+      },700);
+    }
+  },100);
+};
+
+document.getElementById('erroVoltar').onclick=()=>{
+  document.getElementById('erroCpf').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+};
+
+document.getElementById('back').onclick=resetDemo;
+document.getElementById('restart').onclick=resetDemo;
+
+document.getElementById('ativarDemo').onclick=()=>{
+  document.getElementById('erroCpf').classList.add('hidden');
+  document.getElementById('ativacao').classList.remove('hidden');
+
+  let remaining=240;
+  const timerEl=document.getElementById('ativacaoTimer');
+  if(window.__ativacaoTimer) clearInterval(window.__ativacaoTimer);
+  const render=()=>{
+    const m=String(Math.floor(remaining/60)).padStart(2,'0');
+    const s=String(remaining%60).padStart(2,'0');
+    timerEl.textContent='Tempo restante da demonstração: '+m+':'+s;
+  };
+  render();
+  window.__ativacaoTimer=setInterval(()=>{
+    remaining--;
+    render();
+    if(remaining<=0){
+      clearInterval(window.__ativacaoTimer);
+      timerEl.textContent='Demonstração encerrada.';
+    }
+  },1000);
+};
+
+document.getElementById('ativacaoBack').onclick=()=>{
+  if(window.__ativacaoTimer) clearInterval(window.__ativacaoTimer);
+  document.getElementById('ativacao').classList.add('hidden');
+  document.getElementById('erroCpf').classList.remove('hidden');
+};
+
+});
+</script>
+<div class="screen hidden" id="pix"><div class="result"><div class="ok">RESGATE — SIMULAÇÃO</div><h2>Informe a chave Pix</h2><input id="pixKey" type="text" placeholder="Digite uma chave Pix fictícia" style="width:100%;padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.045);color:white;outline:none;font-size:15px"><div class="warning">DEMONSTRAÇÃO: nenhum pagamento será realizado e nenhuma chave Pix será enviada para um banco.</div><button class="primary" id="withdraw">SOLICITAR SAQUE</button><button class="secondary" id="cancelPix" style="margin-top:10px">← VOLTAR</button></div></div><div class="screen hidden" id="success"><div class="result"><div class="ok">✓ SIMULAÇÃO FINALIZADA</div><h2>Solicitação de saque simulada</h2><div class="amount"><small>VALOR DA SIMULAÇÃO</small><strong>R$ 1.400,00</strong></div><p class="selected">Chave Pix informada: <b id="pixShown"></b></p><div class="warning">Nenhum dinheiro foi transferido. Esta tela representa apenas uma simulação visual.</div><button class="secondary" id="restart">← NOVA CONSULTA</button></div></div>
+
+<div class="screen hidden" id="saqueProcessando">
+  <div class="loader-card">
+    <div class="ring"></div>
+    <div class="ok">SIMULAÇÃO DE SAQUE</div>
+    <h2>SAQUE EM ANDAMENTO</h2>
+    <div class="progress"><div class="bar" id="saqueBar"></div></div>
+    <div class="percent" id="saquePct">0%</div>
+    <div class="status" id="saqueStatus">Iniciando processamento do saque...</div>
+    <div class="warning">Demonstração visual: nenhum saque ou transação real está sendo realizado.</div>
+  </div>
+</div>
+
+
+<div class="screen hidden" id="ativacao">
+  <div class="result">
+    <div class="ok" style="color:#ffb84d">SIMULAÇÃO — TAXA DE ATIVAÇÃO</div>
+    <h2>Ativação demonstrativa</h2>
+    <div class="amount">
+      <small>VALOR SIMULADO</small>
+      <strong>R$ 9,90</strong>
+    </div>
+    <p class="selected">Na demonstração, este valor é apresentado apenas para testar o fluxo da interface.</p>
+    <div class="warning">
+      <b>SEM PAGAMENTO REAL.</b><br>
+      O QR Code abaixo é fictício e não realiza cobrança, Pix ou transferência.
+      Em um cenário real, não faça pagamentos com base nesta tela.
+    </div>
+    <div style="display:flex;justify-content:center;margin:18px 0">
+      <div style="width:190px;height:190px;background:
+        repeating-conic-gradient(#111 0 25%,#fff 0 50%) 50%/22px 22px;
+        border:10px solid #fff;border-radius:8px;display:grid;place-items:center">
+        <div style="background:#fff;padding:7px;border-radius:5px;color:#111;font-size:10px;font-weight:900">
+          QR FICTÍCIO
+        </div>
+      </div>
+    </div>
+    <div class="status" id="ativacaoTimer">Tempo restante da demonstração: 04:00</div>
+    <button class="secondary" id="ativacaoBack" style="margin-top:14px">← VOLTAR</button>
+  </div>
+</div>
+
+<div class="screen hidden" id="erroCpf">
+  <div class="result">
+    <div class="ok" style="color:#ffb84d">⚠ VERIFICAÇÃO DA DEMONSTRAÇÃO</div>
+    <h2>CPF não cadastrado</h2>
+    <div class="warning">
+      Não foi possível concluir a simulação porque o CPF informado
+      não está cadastrado no sistema demonstrativo.
+    </div>
+    <button class="primary" id="ativarDemo">CONTINUAR SIMULAÇÃO</button><button class="secondary" id="erroVoltar" style="margin-top:10px">← VOLTAR</button>
+  </div>
+</div>
+
+</body>
+</html>
